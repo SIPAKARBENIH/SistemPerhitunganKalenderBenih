@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sistem Jadwal Pemeriksaan Lapang Benih</title>
+  <style>
+    body { font-family: Arial, sans-serif; background-color: #f5f7fa; margin: 0; padding: 20px; }
+    h1 { text-align: center; color: #2e7d32; }
+    h2 { text-align: center; color: #555; margin-top: -10px; }
+    .container { max-width: 900px; margin: auto; background: #ffffff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+    .form-group { margin-bottom: 15px; }
+    label { font-weight: bold; display: block; margin-bottom: 5px; }
+    input, select, button { width: 100%; padding: 10px; font-size: 14px; }
+    button { background-color: #2e7d32; color: white; border: none; cursor: pointer; border-radius: 4px; margin-top: 5px; }
+    button:hover { background-color: #1b5e20; }
+    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+    table, th, td { border: 1px solid #ddd; }
+    th, td { padding: 10px; text-align: center; }
+    th { background-color: #e8f5e9; }
+    .note { margin-top: 15px; font-size: 13px; color: #555; }
+  </style>
+</head>
+<body>
+
+<h1>Sistem Perhitungan Kalender Benih (SIPAKAR BENIH)</h1>
+<h2>Komoditas Padi Inbrida</h2>
+
+<div class="container">
+  <div class="form-group">
+    <label>Nama Produsen</label>
+    <input type="text" id="produsen" placeholder="Nama produsen" />
+  </div>
+
+  <div class="form-group">
+    <label>Nomor Induk</label>
+    <input type="text" id="nomorInduk" placeholder="Masukkan nomor induk" />
+  </div>
+
+  <div class="form-group">
+    <label>Varietas</label>
+    <select id="varietas">
+      <option value="">-- Pilih Varietas --</option>
+      <option value="Inpari 32 HDB">Inpari 32 HDB</option>
+      <option value="Inpari 42 Agritan GSR">Inpari 42 Agritan GSR</option>
+      <option value="Ciherang">Ciherang</option>
+      <option value="Logawa">Logawa</option>
+    </select>
+  </div>
+
+  <div class="form-group">
+    <label>Tanggal Sebar</label>
+    <input type="date" id="sebar" />
+  </div>
+
+  <div class="form-group">
+    <label>Tanggal Tanam</label>
+    <input type="date" id="tanam" />
+  </div>
+
+  <button type="button" id="btnHitung">Buat Jadwal Pemeriksaan</button>
+
+  <table id="hasil" style="display:none;">
+    <thead>
+      <tr>
+        <th>Jenis Pemeriksaan</th>
+        <th>Tanggal</th>
+        <th>Umur (HST)</th>
+        <th>Keterangan</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Vegetatif</td>
+        <td id="vegetatif"></td>
+        <td id="umurVegetatif"></td>
+        <td>Ajukan permohonan H-7 pelaksanaan pemeriksaan</td>
+      </tr>
+      <tr>
+        <td>Berbunga</td>
+        <td id="berbunga"></td>
+        <td id="umurBerbunga"></td>
+        <td>Ajukan permohonan H-7 pelaksanaan pemeriksaan</td>
+      </tr>
+      <tr>
+        <td>Masak</td>
+        <td id="masak"></td>
+        <td id="umurMasak"></td>
+        <td>Ajukan permohonan H-7 pelaksanaan pemeriksaan</td>
+      </tr>
+      <tr>
+        <td>Panen</td>
+        <td id="panen"></td>
+        <td id="umurPanen"></td>
+        <td>Ajukan permohonan H-7 pelaksanaan pemeriksaan</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="note" id="catatanUmur"></div>
+</div>
+
+<script>
+const dataVarietas = {
+  "Inpari 32 HDB": { vegetatif: 27, berbunga: 67, masak: 92 },
+  "Inpari 42 Agritan GSR": { vegetatif: 22, berbunga: 62, masak: 87 },
+  "Ciherang": { vegetatif: 27, berbunga: 67, masak: 92 },
+  "Logawa": { vegetatif: 22, berbunga: 62, masak: 87 }
+};
+
+function hitungTanggal() {
+  const sebarValue = document.getElementById('sebar').value;
+  const tanamValue = document.getElementById('tanam').value;
+  const varietas = document.getElementById('varietas').value;
+
+  if (!sebarValue || !tanamValue || !varietas) {
+    alert('Tanggal sebar, tanggal tanam, dan varietas wajib diisi');
+    return;
+  }
+
+  const tanggalSebar = new Date(sebarValue);
+  const tanggalTanam = new Date(tanamValue);
+
+  if (tanggalTanam < tanggalSebar) {
+    alert('Tanggal tanam tidak boleh lebih awal dari tanggal sebar');
+    return;
+  }
+
+  const umur = dataVarietas[varietas];
+  if (!umur) {
+    alert('Varietas tidak ditemukan');
+    return;
+  }
+
+  function hitungRentang(awalHST, akhirHST) {
+    let awal = new Date(tanggalTanam);
+    awal.setDate(awal.getDate() + awalHST);
+
+    let akhir = new Date(tanggalTanam);
+    akhir.setDate(akhir.getDate() + akhirHST);
+
+    return {
+      tanggal: awal.toLocaleDateString('id-ID') + ' - ' + akhir.toLocaleDateString('id-ID'),
+      umur: awalHST + ' - ' + akhirHST + ' HST'
+    };
+  }
+
+  // Rentang berdasarkan varietas (±2 hari)
+  const vegetatif = hitungRentang(umur.vegetatif - 2, umur.vegetatif + 3);
+  const berbunga = hitungRentang(umur.berbunga - 2, umur.berbunga + 3);
+  const masak = hitungRentang(umur.masak - 2, umur.masak + 3);
+  const panen = hitungRentang((umur.masak + 7) - 2, (umur.masak + 7) + 3);
+
+  document.getElementById('vegetatif').innerText = vegetatif.tanggal;
+  document.getElementById('berbunga').innerText = berbunga.tanggal;
+  document.getElementById('masak').innerText = masak.tanggal;
+  document.getElementById('panen').innerText = panen.tanggal;
+
+  document.getElementById('umurVegetatif').innerText = vegetatif.umur;
+  document.getElementById('umurBerbunga').innerText = berbunga.umur;
+  document.getElementById('umurMasak').innerText = masak.umur;
+  document.getElementById('umurPanen').innerText = panen.umur;
+
+  document.getElementById('hasil').style.display = 'table';
+
+  document.getElementById('catatanUmur').innerHTML = 
+    '<strong>Catatan:</strong><br>' +
+    '• Selisih sebar ke tanam: <strong>' + Math.round((tanggalTanam - tanggalSebar) / (1000 * 60 * 60 * 24)) + ' hari</strong><br>' +
+    '• Total umur hingga panen: <strong>' + 
+    Math.round((new Date(tanggalTanam.getTime() + (umur.masak + 7 - 2)*24*60*60*1000) - tanggalSebar) / (1000 * 60 * 60 * 24)) + 
+    ' - ' + 
+    Math.round((new Date(tanggalTanam.getTime() + (umur.masak + 7 + 2)*24*60*60*1000) - tanggalSebar) / (1000 * 60 * 60 * 24)) + 
+    ' hari setelah sebar</strong><br>' +
+    '• Umur panen dihitung berdasarkan HST (hari setelah tanam)<br>' +
+    '• Jadwal bersifat perkiraan dan dapat disesuaikan kondisi lapang';
+}
+
+document.getElementById('btnHitung').addEventListener('click', hitungTanggal);
+
+// TEST CASE
+// 1. Kosong -> alert
+// 2. Tanam < sebar -> alert
+// 3. Valid -> tabel muncul
+// 4. Semua fase tampil rentang
+// 5. Tidak ada error undefined
+</script>
+
+</body>
+</html>
